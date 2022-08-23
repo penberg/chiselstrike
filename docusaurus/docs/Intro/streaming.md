@@ -29,3 +29,7 @@ npm run dev -- -- --kafka-connection localhost:9092 --kafka-topics hello
 ```
 
 That's it! Now whenever there is an event on the `hello` topic, your event handler function is called.
+
+## Producing events
+
+* At least once semantics, `upsert` handles dedup
