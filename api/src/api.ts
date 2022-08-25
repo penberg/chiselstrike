@@ -23,6 +23,7 @@ export {
     requestContext,
     unique,
 } from "./datastore.ts";
+export { publish } from "./event.ts";
 export type { ChiselEvent } from "./event.ts";
 export { ChiselRequest, Query } from "./request.ts";
 export { getSecret, responseFromJson } from "./utils.ts";
