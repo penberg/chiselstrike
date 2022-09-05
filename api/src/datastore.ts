@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: © 2022 ChiselStrike <info@chiselstrike.com>
 
 import { crud } from "./crud.ts";
-import { mergeDeep, opAsync, opSync } from "./utils.ts";
+import { mergeDeep, transformBlobs, opAsync, opSync } from "./utils.ts";
 
 /**
  * Base class for various Operators applicable on `ChiselCursor`. An
@@ -952,7 +952,8 @@ export class ChiselEntity {
         ...properties: Record<string, unknown>[]
     ): Promise<T> {
         const result = new this();
-        mergeDeep(result as Record<string, unknown>, ...properties);
+        await transformBlobs(properties);
+        Object.assign(result, ...properties);
         await result.save();
         return result;
     }

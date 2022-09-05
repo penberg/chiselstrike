@@ -412,6 +412,7 @@ fn json_to_value(field_type: &Type, value: &serde_json::Value) -> Result<Expr> {
         Type::String => ExprValue::String(convert!(as_str, "string")),
         Type::Float => ExprValue::F64(convert!(as_f64, "float")),
         Type::Boolean => ExprValue::Bool(convert!(as_bool, "bool")),
+        Type::Blob => todo!(),
     };
     Ok(expr_val.into())
 }
@@ -482,6 +483,7 @@ fn filter_from_param(
         Type::String => ExprValue::String(value.to_owned()),
         Type::Float => ExprValue::F64(value.parse::<f64>().with_context(|| err_msg("f64"))?),
         Type::Boolean => ExprValue::Bool(value.parse::<bool>().with_context(|| err_msg("bool"))?),
+        Type::Blob => todo!(),
         Type::Entity(_) | Type::Array(_) => anyhow::bail!(
             "trying to filter by property '{}' of type '{}' which is not supported",
             fields.last().unwrap(),

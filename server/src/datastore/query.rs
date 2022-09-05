@@ -18,6 +18,7 @@ use std::fmt::Write;
 pub enum SqlValue {
     Bool(bool),
     F64(f64),
+    Blob(Vec<u8>),
     String(String),
 }
 

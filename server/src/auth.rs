@@ -17,12 +17,15 @@ pub const AUTH_USER_NAME: &str = "AuthUser";
 pub const AUTH_SESSION_NAME: &str = "AuthSession";
 pub const AUTH_TOKEN_NAME: &str = "AuthToken";
 pub const AUTH_ACCOUNT_NAME: &str = "AuthAccount";
+pub const BLOB_NAME: &str = "Blob";
 
-const AUTH_ENTITY_NAMES: [&str; 4] = [
+// TODO: Rename to BUILTIN_ENTITY_NAMES.
+const AUTH_ENTITY_NAMES: [&str; 5] = [
     AUTH_USER_NAME,
     AUTH_SESSION_NAME,
     AUTH_TOKEN_NAME,
     AUTH_ACCOUNT_NAME,
+    BLOB_NAME,
 ];
 
 pub fn is_auth_entity_name(entity_name: &str) -> bool {

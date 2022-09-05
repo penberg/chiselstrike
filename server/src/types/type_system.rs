@@ -379,9 +379,12 @@ impl TypeSystem {
 
     pub fn get(&self, ty: &TypeId) -> Result<Type, TypeSystemError> {
         match ty {
-            TypeId::String | TypeId::Float | TypeId::Boolean | TypeId::Id | TypeId::Array(_) => {
-                self.lookup_builtin_type(&ty.name())
-            }
+            TypeId::String
+            | TypeId::Float
+            | TypeId::Boolean
+            | TypeId::Blob
+            | TypeId::Id
+            | TypeId::Array(_) => self.lookup_builtin_type(&ty.name()),
             TypeId::Entity { name, api_version } => {
                 self.lookup_entity(name, api_version).map(Type::Entity)
             }

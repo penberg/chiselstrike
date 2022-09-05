@@ -99,6 +99,7 @@ impl TryFrom<&Field> for ColumnDef {
             TypeId::Id => column_def.text().primary_key(),
             TypeId::Float => column_def.double(),
             TypeId::Boolean => column_def.boolean(),
+            TypeId::Blob => column_def.binary(),
             TypeId::Entity { .. } => column_def.text(), // Foreign key, must the be same type as Type::Id
             TypeId::Array(_) => column_def.text(),      // Arrays are stored as serialized JSONs.
         };
@@ -124,6 +125,7 @@ impl SqlWithArguments {
             match arg {
                 SqlValue::Bool(arg) => sqlx_query = sqlx_query.bind(arg),
                 SqlValue::F64(arg) => sqlx_query = sqlx_query.bind(arg),
+                SqlValue::Blob(arg) => sqlx_query = sqlx_query.bind(arg),
                 SqlValue::String(arg) => sqlx_query = sqlx_query.bind(arg),
             };
         }
@@ -419,6 +421,9 @@ impl QueryEngine {
                                 _ => to_json!(bool),
                             }
                         }
+                        TypeId::Blob => {
+                            todo!();
+                        }
                         TypeId::Entity { .. } => anyhow::bail!("object is not a scalar"),
                         TypeId::Array(_) => {
                             let array_str = row.get::<&str, _>(column_idx);
@@ -690,6 +695,12 @@ impl QueryEngine {
             }
             TypeId::Float => SqlValue::F64(convert_json_value!(as_f64, f64)),
             TypeId::Boolean => SqlValue::Bool(convert_json_value!(as_bool, bool)),
+            TypeId::Blob => {
+                // FIXME
+                let val = ty_value.get(&field.name);
+                println!("value = {:?}", val);
+                SqlValue::Blob(vec![])
+            }
             TypeId::Array(element_type) => {
                 let val = match ty_value.get(&field.name) {
                     Some(value_json) => {
@@ -722,6 +733,7 @@ impl QueryEngine {
                     TypeId::String | TypeId::Id => maybe_bail!(is_string),
                     TypeId::Float => maybe_bail!(is_number),
                     TypeId::Boolean => maybe_bail!(is_boolean),
+                    TypeId::Blob => todo!(),
                     TypeId::Array(inner_element) => self
                         .validate_array(inner_element, e)
                         .context("failed to validate inner array at position {i}")?,

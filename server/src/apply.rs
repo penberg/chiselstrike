@@ -384,6 +384,7 @@ impl From<Type> for TypeMsg {
             Type::Float => TypeEnum::Number(true),
             Type::String => TypeEnum::String(true),
             Type::Boolean => TypeEnum::Bool(true),
+            Type::Blob => todo!(),
             Type::Entity(entity) => TypeEnum::Entity(entity.name().to_owned()),
             Type::Array(elem_type) => {
                 let inner_msg = (*elem_type).into();

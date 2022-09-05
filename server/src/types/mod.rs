@@ -17,6 +17,7 @@ pub enum Type {
     String,
     Float,
     Boolean,
+    Blob,
     Entity(Entity),
     Array(Box<Type>),
 }
@@ -27,6 +28,7 @@ impl Type {
             Type::Float => "number".to_string(),
             Type::String => "string".to_string(),
             Type::Boolean => "boolean".to_string(),
+            Type::Blob => "Blob".to_string(),
             Type::Entity(ty) => ty.name.to_string(),
             Type::Array(ty) => format!("Array<{}>", ty.name()),
         }
@@ -223,6 +225,7 @@ pub enum TypeId {
     String,
     Float,
     Boolean,
+    Blob,
     Id,
     Entity { name: String, api_version: String },
     Array(Box<TypeId>),
@@ -234,6 +237,7 @@ impl TypeId {
             TypeId::Id | TypeId::String => "string".to_string(),
             TypeId::Float => "number".to_string(),
             TypeId::Boolean => "boolean".to_string(),
+            TypeId::Blob => "Blob".to_string(),
             TypeId::Entity { ref name, .. } => name.to_string(),
             TypeId::Array(elem_type) => format!("Array<{}>", elem_type.name()),
         }
@@ -246,6 +250,7 @@ impl From<Type> for TypeId {
             Type::String => Self::String,
             Type::Float => Self::Float,
             Type::Boolean => Self::Boolean,
+            Type::Blob => Self::Blob,
             Type::Entity(e) => Self::Entity {
                 name: e.name().to_string(),
                 api_version: e.api_version.clone(),

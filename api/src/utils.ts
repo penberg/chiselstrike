@@ -12,6 +12,29 @@ export function opAsync(
     return Deno.core.opAsync(opName, a, b);
 }
 
+function isObject(item: unknown): boolean {
+    return (item && typeof item === "object" &&
+        !Array.isArray(item)) as boolean;
+}
+
+export async function transformBlobs(records: Record<string, unknown>[]) {
+    for (const record of records) {
+        for (const key in record) {
+            const value = record[key];
+            if (!isObject(value)) {
+                continue;
+            }
+            const object = value as object;
+            if (object.constructor.name != "Blob") {
+                continue;
+            }
+            const blob = value as Blob;
+            const buffer = await blob.arrayBuffer();
+            Object.assign(record, { [key]: buffer });
+        }    
+    }
+}
+
 /**
  * Acts the same as Object.assign, but performs deep merge instead of a shallow one.
  */
@@ -19,11 +42,6 @@ export function mergeDeep(
     target: Record<string, unknown>,
     ...sources: Record<string, unknown>[]
 ): Record<string, unknown> {
-    function isObject(item: unknown): boolean {
-        return (item && typeof item === "object" &&
-            !Array.isArray(item)) as boolean;
-    }
-
     if (!sources.length) {
         return target;
     }
