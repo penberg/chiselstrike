@@ -554,40 +554,43 @@ fn is_auth_path(api_version: &str, path: &str) -> bool {
     api_version == "__chiselstrike" && path.starts_with("/auth/")
 }
 
-#[op]
-async fn op_chisel_store(
+#[op(v8)]
+fn op_chisel_store(
+    _scope: &mut v8::HandleScope,
     state: Rc<RefCell<OpState>>,
     content: StoreContent,
     c: ChiselRequestContext,
-) -> Result<IdTree> {
-    let type_name = &content.name;
-    let value = &content.value;
+) -> Result<impl Future<Output = Result<IdTree, AnyError>> + 'static, AnyError> {
+    Ok(async move {
+        let type_name = &content.name;
+        let value = &content.value;
 
-    let (query_engine, ty) = {
-        let state = state.borrow();
-        let ty = match current_type_system(&state).lookup_type(type_name, &c.api_version) {
-            Ok(Type::Entity(ty)) => ty,
-            _ => anyhow::bail!("Cannot save into type {}.", type_name),
+        let (query_engine, ty) = {
+            let state = state.borrow();
+            let ty = match current_type_system(&state).lookup_type(type_name, &c.api_version) {
+                Ok(Type::Entity(ty)) => ty,
+                _ => anyhow::bail!("Cannot save into type {}.", type_name),
+            };
+            if ty.is_auth() && !is_auth_path(&c.api_version, &c.path) {
+                anyhow::bail!("Cannot save into type {}.", type_name);
+            }
+
+            let query_engine = query_engine_arc(&state);
+            (query_engine, ty)
         };
-        if ty.is_auth() && !is_auth_path(&c.api_version, &c.path) {
-            anyhow::bail!("Cannot save into type {}.", type_name);
+        let transaction = {
+            let state = state.borrow();
+            current_transaction(&state)
+        };
+        let mut transaction = transaction.lock().await;
+
+        {
+            let state = state.borrow();
+            let ts = current_type_system(&state);
+            query_engine.add_row(&ty, value, Some(transaction.deref_mut()), ts)
         }
-
-        let query_engine = query_engine_arc(&state);
-        (query_engine, ty)
-    };
-    let transaction = {
-        let state = state.borrow();
-        current_transaction(&state)
-    };
-    let mut transaction = transaction.lock().await;
-
-    {
-        let state = state.borrow();
-        let ts = current_type_system(&state);
-        query_engine.add_row(&ty, value, Some(transaction.deref_mut()), ts)
-    }
-    .await
+        .await
+    })
 }
 
 #[derive(Deserialize)]
