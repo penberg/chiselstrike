@@ -544,24 +544,102 @@ impl RequestContext<'_> {
     }
 }
 
-#[derive(Deserialize)]
-struct StoreContent {
-    name: String,
-    value: JsonObject,
+#[derive(Debug)]
+enum JsValue {
+    Num(f64),
+    Str(String),
+}
+
+struct JsObject<'a> {
+    inner: v8::Local<'a, v8::Object>,
+}
+
+impl<'a> JsObject<'a> {
+    fn new(inner: v8::Local<'a, v8::Object>) -> Self {
+        Self { inner }
+    }
+
+    fn property_names(&self, scope: &mut v8::HandleScope) -> Vec<String> {
+        let names = self.inner.get_own_property_names(scope).unwrap();
+        let mut props = Vec::new();
+        for i in 0..names.length() {
+            let key = names.get_index(scope, i).unwrap();
+            let key = v8::Local::<v8::String>::try_from(key).unwrap();
+            let key = key.to_rust_string_lossy(scope);
+            props.push(key);
+        }
+        props
+    }
+
+    fn get(&self, scope: &mut v8::HandleScope, prop_name: &String) -> Option<JsValue> {
+        let prop_name = v8::String::new(scope, prop_name).unwrap();
+        let prop_name = v8::Local::<v8::Value>::try_from(prop_name).unwrap();
+        let value = self.inner.get(scope, prop_name);
+        if let Some(value) = value {
+            if value.is_boolean() {
+                todo!("boolean");
+            } else if value.is_number() {
+                let value = value.to_number(scope).unwrap();
+                let value = value.value();
+                Some(JsValue::Num(value))
+            } else if value.is_string() {
+                let value = value.to_string(scope).unwrap();
+                let value = value.to_rust_string_lossy(scope);
+                Some(JsValue::Str(format!("{}", value)))
+            } else if value.is_array() {
+                todo!("array");
+            } else if value.is_array_buffer() {
+                //let value = value.to_array_buffer_view(scope).unwrap();
+                todo!("array buffer");
+            } else if value.is_array_buffer_view() {
+                //let value = value.to_array_buffer_view(scope).unwrap();
+                todo!("array buffer view");
+            } else if value.is_object() {
+                let value = value.to_object(scope).unwrap();
+                let obj = JsObject::new(value);
+                let props = obj.property_names(scope);
+                println!("number of properties: {}", props.len());
+                for prop in &props {
+                    println!("property `{}` -> {:?}", prop, obj.get(scope, prop));
+                }
+                None
+            } else if value.is_null_or_undefined() {
+                None
+            } else {
+                todo!("unknown type")
+            }
+        } else {
+            None
+        }
+    }
 }
 
 fn is_auth_path(api_version: &str, path: &str) -> bool {
     api_version == "__chiselstrike" && path.starts_with("/auth/")
 }
 
+#[derive(Deserialize)]
+struct StoreContent<'a> {
+    name: String,
+    value: serde_v8::Value<'a>,
+}
+
 #[op(v8)]
 fn op_chisel_store(
-    _scope: &mut v8::HandleScope,
+    scope: &mut v8::HandleScope,
     state: Rc<RefCell<OpState>>,
     content: StoreContent,
     c: ChiselRequestContext,
 ) -> Result<impl Future<Output = Result<IdTree, AnyError>> + 'static, AnyError> {
+    let value = content.value.v8_value;
+    let value = v8::Local::<v8::Object>::try_from(value).unwrap();
+    let obj = JsObject::new(value);
+    let props = obj.property_names(scope);
+    for prop in &props {
+        println!("property `{}` -> {:?}", prop, obj.get(scope, prop));
+    }
     Ok(async move {
+        /*
         let type_name = &content.name;
         let value = &content.value;
 
@@ -590,6 +668,8 @@ fn op_chisel_store(
             query_engine.add_row(&ty, value, Some(transaction.deref_mut()), ts)
         }
         .await
+        */
+        todo!();
     })
 }
 
