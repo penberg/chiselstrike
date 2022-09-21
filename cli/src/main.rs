@@ -11,7 +11,6 @@ use proto::{
     type_msg::TypeEnum, ChiselDeleteRequest, DescribeRequest, PopulateRequest, RestartRequest,
     StatusRequest,
 };
-use tonic::transport::ClientTlsConfig;
 use std::env;
 use std::fs;
 use std::io::ErrorKind;
@@ -316,14 +315,7 @@ async fn main() -> Result<()> {
             spawn_server(chiseld_args, fut, cb).await?;
         }
         Command::Status => {
-            let url = server_url;
-            let conn = tonic::transport::Endpoint::new(url.to_string())?;
-            let conn = if url.starts_with("https") {
-                conn.tls_config(ClientTlsConfig::new())?
-            } else {
-                conn
-            };
-            let mut client = ChiselRpcClient::connect(conn).await?;
+            let mut client = ChiselRpcClient::connect(server_url).await?;
             let request = tonic::Request::new(StatusRequest {});
             let response = execute!(client.get_status(request).await);
             println!("Server status is {}", response.message);
